@@ -1,7 +1,7 @@
 #!/bin/bash
 # Prueba del entorno en un nodo de cómputo de Mendieta (partición short, unos minutos).
-#   sbatch scripts/cluster/prueba_mendieta.sbatch && tail -f logs/prueba-*.out
-# Lanza Python igual que tuneo_mendieta.sbatch (directo, sin srun). Salida sin buffer y con la hora de cada etapa;
+#   sbatch scripts/prueba_mendieta.sbatch && tail -f logs/prueba-*.out
+# Lanza Python igual que plantilla-sbatch.sh (directo, sin srun). Salida sin buffer y con la hora de cada etapa;
 # si algo se cuelga, faulthandler vuelca cada 60 s dónde está cada hilo.
 #SBATCH --job-name=prueba_entorno
 #SBATCH --partition=short
@@ -13,9 +13,9 @@
 #SBATCH --output=logs/prueba-%j.out
 
 . /etc/profile
-source scripts/cluster/entorno_scratch.sh
+source scripts/entorno_scratch.sh
 echo "nodo $(hostname), CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 nvidia-smi --query-gpu=name,driver_version,memory.total,compute_mode,persistence_mode --format=csv
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-python3 -u -X faulthandler scripts/cluster/prueba_entorno.py
+python3 -u -X faulthandler scripts/prueba_entorno.py
 echo "código de salida: $?"

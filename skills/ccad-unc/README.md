@@ -2,24 +2,28 @@
 
 ## Qué es
 
-Una skill de Claude Code para trabajar con los clusters de **UNC Supercómputo (CCAD, Universidad Nacional de Córdoba)**: Mendieta (GPU A30), Serafín, Eulogia y Mulatona. Le da a Claude el contexto para:
+Una skill de Claude Code para trabajar con los clusters de **UNC Supercómputo (CCAD, Universidad Nacional de Córdoba)**: Mendieta (GPU A30), Serafín, Mulatona y Eulogia. Le da a Claude el contexto para:
 
-- conectarse por SSH y usar Slurm (`sbatch`, `squeue`, `sacct`, `seff`);
-- elegir partición y tiempo (`short` hasta 1 h, `multi` hasta 2 días);
-- preparar un entorno de Python/PyTorch que funcione en los nodos;
+- elegir cluster y partición según el trabajo: GPU en Mendieta, CPU en Serafín, pruebas en Mulatona;
+- conectarse por SSH y usar Slurm (`sbatch`, job arrays, `squeue`, `sacct`, `seff`);
+- preparar entornos de Python que carguen rápido en los nodos (PyTorch con uv, o PDAL/GDAL con conda-pack);
+- entrenar en GPU con checkpoints y retoma, o procesar miles de archivos (tiles LiDAR, rásters) en lotes que llenan nodos de CPU;
 - mover archivos (`rsync`) y traer resultados;
-- diagnosticar errores típicos (`TIMEOUT`, `DependencyNeverSatisfied`, imports lentos).
+- diagnosticar errores típicos (`TIMEOUT`, `OUT_OF_MEMORY`, `DependencyNeverSatisfied`, imports lentos, nodos subutilizados).
 
 Contenido:
 
 | Archivo | Qué tiene |
 |---|---|
-| `SKILL.md` | Reglas del CCAD y flujo de trabajo. Es lo que Claude carga al usar la skill. |
-| `references/wiki.md` | Resumen, página por página, de la wiki oficial (https://wiki.ccad.unc.edu.ar/). |
+| `SKILL.md` | Lo común: elegir cluster, reglas, almacenamiento, conexión, Slurm, errores, seguridad. Es lo que Claude carga al usar la skill, y desde ahí deriva al flujo que corresponde. |
+| `references/gpu-mendieta.md` | Flujo con GPU en Mendieta: entorno con uv, prueba, sbatch, checkpoints y retoma. |
 | `references/lecciones-mendieta.md` | Lo aprendido en la práctica y que no está en la wiki (entorno en `/scratch`, `set -u`, `singleton`, retoma en GPU, parar a tiempo, SIGTERM, etc.). |
-| `references/plantilla-sbatch.sh` | Plantilla mínima de un job de GPU. |
+| `references/cpu-tiles.md` | Flujo por tiles en CPU en Serafín y Mulatona: medir, dimensionar, lotes, job arrays, reintentos. |
+| `references/wiki.md` | Resumen, página por página, de la wiki oficial (https://wiki.ccad.unc.edu.ar/). |
+| `scripts/gpu/` | Empaquetar y descomprimir el entorno de uv, plantilla sbatch de GPU, prueba del entorno. |
+| `scripts/cpu/` | Crear y empaquetar el entorno conda, armar lotes, medir, job array por lotes, envoltorio por tile, estado; ejemplo con PDAL. |
 
-**Límite actual:** la plantilla y las lecciones nombran tres scripts que viven en el repo land2vec (`scripts/cluster/entorno_scratch.sh`, `empaquetar_entorno.sh`, `prueba_mendieta.sbatch`). Fuera de ese repo hay que copiarlos junto a la skill o reescribir esas rutas.
+Los scripts de `scripts/gpu/` o `scripts/cpu/` se copian a `PROYECTO/scripts/` en el cluster y se corren desde la carpeta del proyecto.
 
 ## Cómo instalarla
 
@@ -81,14 +85,32 @@ Notas:
 ## Cómo usarla en una sesión de chat
 
 1. **Invocarla.** Escribí `/ccad-unc`, o pedí algo del cluster con palabras normales ("cómo encolo un job en Mendieta", "revisá cómo viene mi job"); Claude carga la skill solo cuando el tema coincide.
-2. **Conexión.** Claude se conecta con tu agente SSH (`ssh -o BatchMode=yes <usuario>@mendieta.ccad.unc.edu.ar`). La clave privada nunca se le pide ni se copia. Si el agente no está disponible, no puede conectarse.
+2. **Conexión.** Claude se conecta con tu agente SSH (`ssh -o BatchMode=yes <usuario>@<cluster>.ccad.unc.edu.ar`, o tus alias de `~/.ssh/config`). La clave privada nunca se le pide ni se copia. Si el agente no está disponible, no puede conectarse.
 3. **Qué hace sin preguntar:** comandos de lectura (`squeue`, `sacct`, `sinfo`, leer logs y archivos de resultados, `sbatch --test-only`).
 4. **Qué te pregunta antes:** cualquier cosa que modifique el cluster: encolar (`sbatch`), cancelar (`scancel`), cambiar jobs (`scontrol update`), subir o sobrescribir archivos.
 5. **Pedidos típicos:**
-   - "Preparame un sbatch para entrenar X en una GPU" (usa `references/plantilla-sbatch.sh`).
+   - "Preparame un sbatch para entrenar X en una GPU" (usa `scripts/gpu/plantilla-sbatch.sh`).
+   - "Tengo 400 tiles LAZ para procesar con este script, armame la corrida en Serafín" (usa `scripts/cpu/`).
    - "Estimá cuándo arranca este job en multi" (`squeue --me --start`).
    - "El job terminó en TIMEOUT, ¿por qué?" (revisa log y `sacct`).
    - "Bajá los resultados a mi máquina" (`rsync`).
 6. **Seguimiento periódico:** se puede combinar con `/loop` para revisar un job cada cierto tiempo, y avisar solo si algo falla o termina.
 
-Antes del primer job conviene pedirle a Claude que lea `references/lecciones-mendieta.md`: cada punto costó al menos un job fallido.
+Antes del primer job de GPU conviene pedirle a Claude que lea `references/lecciones-mendieta.md`: cada punto costó al menos un job fallido.
+
+## Confirmación obligatoria para ssh y rsync
+
+La skill le pide a Claude confirmar antes de encolar, cancelar o borrar, pero es una instrucción, no un candado. Para que Claude Code pida aprobación antes de cada comando hacia el cluster, en `~/.claude/settings.json` (o `.claude/settings.json` del proyecto):
+
+```json
+{
+  "permissions": {
+    "ask": ["Bash(ssh:*)", "Bash(rsync:*)", "Bash(scp:*)"]
+  }
+}
+```
+
+## Créditos
+
+Skill original (flujo de GPU, lecciones de Mendieta, resumen de la wiki, reglas de seguridad): Germán Rosati.
+Flujo de CPU por tiles y reorganización en núcleo común más referencias: Rafael Grimson.

@@ -1,0 +1,22 @@
+# Entorno base para procesar tiles LiDAR y rásters en Serafín y Mulatona.
+# Ambos clusters tienen AVX2 (EPYC Zen 2 y Xeon Broadwell), así que el mismo entorno corre en los dos.
+# Agregar o quitar paquetes según el proyecto y volver a correr crear_entorno.sh.
+name: geo
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy
+  - scipy
+  - pandas
+  - pdal
+  - python-pdal
+  - gdal
+  - rasterio
+  - laspy
+  - lazrs-python
+  - geopandas
+  - shapely
+  - pyproj
+  - scikit-learn
+  - tqdm

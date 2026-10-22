@@ -1,13 +1,13 @@
 # Lecciones de la práctica en Mendieta (no están en la wiki)
 
-Salen de correr el tuneo de un autoencoder en PyTorch en Mendieta, del 2026-10-09 al 2026-10-10: 24 configuraciones, 1 A30, más de 7 h. Cada punto costó al menos un job fallido. La implementación que funcionó está en `scripts/cluster/` de este repo.
+Salen de correr el tuneo de un autoencoder en PyTorch en Mendieta, del 2026-10-09 al 2026-10-10: 24 configuraciones, 1 A30, más de 7 h. Cada punto costó al menos un job fallido. La implementación original está en `scripts/cluster/` del repo land2vec; la versión general, en `scripts/gpu/` de esta skill.
 
 ## 1. El /home es lento para cargar bibliotecas: correr el entorno desde el /scratch
 - **Síntoma:** un job de prueba moría por `TIMEOUT` sin imprimir nada, con el 0,2 % de CPU usada. Con `faulthandler` apareció la causa: estaba trabado en `import torch` (`torch/__init__.py`, `_load_global_deps`, `ctypes.CDLL`). **En el nodo, `import torch` tardó 710 s; en la cabecera, con los archivos en caché, 4 s.**
 - **Causa:** al cargar unos 3 GB de `.so` (CUDA, cuBLAS, cuDNN) desde el NFS, el sistema hace miles de lecturas chicas, y cada una tiene la latencia de la red.
 - **Solución:**
-  1. En la cabecera, empaquetar en un solo `.tar` el Python independiente de `uv` (`~/.local/share/uv/python/cpython-3.13.*`) con el `site-packages` del venv metido adentro. Así los `.pth` se procesan solos. Ver `scripts/cluster/empaquetar_entorno.sh`.
-  2. Al empezar el job: `tar -xf entorno.tar -C /scratch/$USER/$SLURM_JOB_ID/py` y poner `/scratch/$USER/$SLURM_JOB_ID/py/bin` primero en el `PATH`, más `PYTHONNOUSERSITE=1`. Ver `scripts/cluster/entorno_scratch.sh`.
+  1. En la cabecera, empaquetar en un solo `.tar` el Python independiente de `uv` (`~/.local/share/uv/python/cpython-3.13.*`) con el `site-packages` del venv metido adentro. Así los `.pth` se procesan solos. Ver `scripts/gpu/empaquetar_entorno.sh`.
+  2. Al empezar el job: `tar -xf entorno.tar -C /scratch/$USER/$SLURM_JOB_ID/py` y poner `/scratch/$USER/$SLURM_JOB_ID/py/bin` primero en el `PATH`, más `PYTHONNOUSERSITE=1`. Ver `scripts/gpu/entorno_scratch.sh`.
   3. Resultado: 6,6 GB copiados en 36 s, `import torch` en 4 s.
 - **Rehacer el `.tar` cada vez que cambie el venv.**
 - `uv venv` toma el primer Python 3.13 del `PATH`, que puede ser el de Miniconda y no es relocalizable. Usar `uv venv --python-preference only-managed`.
