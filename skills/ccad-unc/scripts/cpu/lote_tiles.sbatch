@@ -1,8 +1,10 @@
 #!/bin/bash
-# Procesa un lote de tiles en un nodo completo de Serafín. Una tarea del array = un lote = un nodo.
-# Encolar desde la carpeta del proyecto (la cantidad de lotes la imprime armar_lotes.sh):
+# Procesa un lote de tiles en un nodo completo. Una tarea del array = un lote = un nodo.
+# Los #SBATCH de abajo son para Serafín (64 cores). Encolar desde la carpeta del proyecto
+# (la cantidad de lotes la imprime armar_lotes.sh):
 #
-#   sbatch --array=1-NLOTES%4 scripts/lote_tiles.sbatch
+#   sbatch --array=1-NLOTES%4 scripts/lote_tiles.sbatch                      # Serafín
+#   sbatch --array=1-NLOTES%4 -c 36 --mem=0 scripts/lote_tiles.sbatch        # Helvetios (36 cores, toda la RAM)
 #   sbatch --array=1-NLOTES%4 --export=ALL,P=32 scripts/lote_tiles.sbatch     # menos procesos por nodo
 #   sbatch --array=7,12 scripts/lote_tiles.sbatch                               # relanzar lotes puntuales
 #
@@ -10,11 +12,11 @@
 # Relanzar un lote es seguro: los tiles terminados (estado/ok/) se saltean.
 #
 #SBATCH --job-name=tiles
-#SBATCH --partition=short              # short: hasta 1 h, arranca rápido. multi: hasta 2 días
+#SBATCH --partition=short              # short: hasta 1 h, arranca rápido. Larga: multi (Serafín), batch (Helvetios)
 #SBATCH --time=0-01:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64             # Serafín: el job mínimo es un nodo entero, hay que llenarlo
+#SBATCH --cpus-per-task=64             # Serafín; en Helvetios pasar -c 36 --mem=0 al encolar
 #SBATCH --exclusive
 #SBATCH --output=logs/%x-%A_%a.out     # logs/ tiene que existir antes de encolar
 
@@ -25,7 +27,7 @@ set -euo pipefail
 export PROY=${PROY:-$SLURM_SUBMIT_DIR}
 export CMD_TILE=${CMD_TILE:-python3 -u $PROY/procesar_tile.py}   # se llama: CMD_TILE entrada dir_salida
 P=${P:-$SLURM_CPUS_PER_TASK}           # tiles simultáneos; bajarlo si la RAM no alcanza (ver references/cpu-tiles.md)
-export SEG_TILE=${SEG_TILE:-600}       # tiempo máximo esperado de un tile (medido en Mulatona o Serafín)
+export SEG_TILE=${SEG_TILE:-600}       # tiempo máximo esperado de un tile (medir con medir_tile.sbatch)
 MARGEN_SEG=${MARGEN_SEG:-300}          # 5 min en short; 15 min (900) en multi
 COPIAR_ENTRADA=${COPIAR_ENTRADA:-1}    # 1: copiar los tiles del lote al /scratch; 0: leerlos del /home
 # ------------------------------------------------------------------------------------------------------

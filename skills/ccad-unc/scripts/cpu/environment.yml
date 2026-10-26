@@ -1,5 +1,5 @@
-# Entorno base para procesar tiles LiDAR y rásters en Serafín y Mulatona.
-# Ambos clusters tienen AVX2 (EPYC Zen 2 y Xeon Broadwell), así que el mismo entorno corre en los dos.
+# Entorno base para procesar tiles LiDAR y rásters en Helvetios y Serafín.
+# Probado en los dos (2026-10). Cada cluster tiene su /home: el entorno se arma en cada uno.
 # Agregar o quitar paquetes según el proyecto y volver a correr crear_entorno.sh.
 name: geo
 channels:

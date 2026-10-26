@@ -39,4 +39,6 @@ DUP=$(sed 's#.*/##; s/\.[^.]*$//' lotes/todos.txt | sort | uniq -d | head -5)
 split -l "$N" -d -a 4 --numeric-suffixes=1 --additional-suffix=.txt lotes/todos.txt lotes/lote_
 NLOTES=$(compgen -G "lotes/lote_*.txt" | wc -l)
 echo "$TOTAL tiles en $NLOTES lotes de hasta $N."
-echo "Encolar (Serafín) con:  sbatch --array=1-$NLOTES%4 scripts/lote_tiles.sbatch"
+echo "Encolar con:"
+echo "  Helvetios:  sbatch --array=1-$NLOTES%4 -c 36 --mem=0 scripts/lote_tiles.sbatch"
+echo "  Serafín:    sbatch --array=1-$NLOTES%4 scripts/lote_tiles.sbatch"

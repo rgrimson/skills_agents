@@ -2,9 +2,9 @@
 
 ## Qué es
 
-Una skill de Claude Code para trabajar con los clusters de **UNC Supercómputo (CCAD, Universidad Nacional de Córdoba)**: Mendieta (GPU A30), Serafín, Mulatona y Eulogia. Le da a Claude el contexto para:
+Una skill de Claude Code para trabajar con los clusters de **UNC Supercómputo (CCAD, Universidad Nacional de Córdoba)**: Helvetios, Serafín, Mendieta (GPU A30), y Mulatona y Eulogia mientras sigan en servicio (se retiran desde el 28/10/2026). Le da a Claude el contexto para:
 
-- elegir cluster y partición según el trabajo: GPU en Mendieta, CPU en Serafín, pruebas en Mulatona;
+- elegir cluster y partición según el trabajo: GPU en Mendieta, CPU en Helvetios o Serafín;
 - conectarse por SSH y usar Slurm (`sbatch`, job arrays, `squeue`, `sacct`, `seff`);
 - preparar entornos de Python que carguen rápido en los nodos (PyTorch con uv, o PDAL/GDAL con conda-pack);
 - entrenar en GPU con checkpoints y retoma, o procesar miles de archivos (tiles LiDAR, rásters) en lotes que llenan nodos de CPU;
@@ -18,7 +18,7 @@ Contenido:
 | `SKILL.md` | Lo común: elegir cluster, reglas, almacenamiento, conexión, Slurm, errores, seguridad. Es lo que Claude carga al usar la skill, y desde ahí deriva al flujo que corresponde. |
 | `references/gpu-mendieta.md` | Flujo con GPU en Mendieta: entorno con uv, prueba, sbatch, checkpoints y retoma. |
 | `references/lecciones-mendieta.md` | Lo aprendido en la práctica y que no está en la wiki (entorno en `/scratch`, `set -u`, `singleton`, retoma en GPU, parar a tiempo, SIGTERM, etc.). |
-| `references/cpu-tiles.md` | Flujo por tiles en CPU en Serafín y Mulatona: medir, dimensionar, lotes, job arrays, reintentos. |
+| `references/cpu-tiles.md` | Flujo por tiles en CPU en Helvetios y Serafín: medir, dimensionar, lotes, job arrays, reintentos. |
 | `references/wiki.md` | Resumen, página por página, de la wiki oficial (https://wiki.ccad.unc.edu.ar/). |
 | `scripts/gpu/` | Empaquetar y descomprimir el entorno de uv, plantilla sbatch de GPU, prueba del entorno. |
 | `scripts/cpu/` | Crear y empaquetar el entorno conda, armar lotes, medir, job array por lotes, envoltorio por tile, estado; ejemplo con PDAL. |

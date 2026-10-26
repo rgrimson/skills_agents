@@ -1,6 +1,6 @@
 ---
 name: ccad-unc
-description: Usar los clusters de UNC Supercómputo / CCAD (Universidad Nacional de Córdoba) - Mendieta (GPU A30), Serafín, Mulatona, Eulogia - por SSH y Slurm, tanto para entrenar modelos con GPU como para procesar muchos archivos en CPU (tiles LiDAR LAS/LAZ, rásters, imágenes). Usar siempre que haya que conectarse a *.ccad.unc.edu.ar, elegir cluster o partición, subir datos con rsync, preparar un entorno de Python (PyTorch, PDAL, GDAL), medir cuánto tarda un trabajo, escribir o encolar scripts sbatch o job arrays, seguir jobs (squeue, sacct, seff, jobmetrics), reintentar lo que falló o traer resultados. También ante dudas de normas de uso del CCAD, colas, límites de tiempo, /scratch o errores de jobs (TIMEOUT, OUT_OF_MEMORY, DependencyNeverSatisfied, imports lentos, nodos subutilizados), aunque no se nombre el cluster.
+description: Usar los clusters de UNC Supercómputo / CCAD (Universidad Nacional de Córdoba) - Helvetios, Serafín, Mendieta (GPU A30), y los que se retiran Mulatona y Eulogia - por SSH y Slurm, tanto para entrenar modelos con GPU como para procesar muchos archivos en CPU (tiles LiDAR LAS/LAZ, rásters, imágenes). Usar siempre que haya que conectarse a *.ccad.unc.edu.ar, elegir cluster o partición, subir datos con rsync, preparar un entorno de Python (PyTorch, PDAL, GDAL), medir cuánto tarda un trabajo, escribir o encolar scripts sbatch o job arrays, seguir jobs (squeue, sacct, seff, jobmetrics), reintentar lo que falló o traer resultados. También ante dudas de normas de uso del CCAD, colas, límites de tiempo, /scratch o errores de jobs (TIMEOUT, OUT_OF_MEMORY, DependencyNeverSatisfied, imports lentos, nodos subutilizados), aunque no se nombre el cluster.
 ---
 
 # UNC Supercómputo (CCAD-UNC)
@@ -11,7 +11,7 @@ Este archivo tiene lo común. El flujo completo depende del tipo de trabajo:
 | Tipo de trabajo | Cluster | Leer | Scripts |
 |---|---|---|---|
 | **Usa GPU** (entrenar o correr redes con PyTorch, etc.) | Mendieta | [references/gpu-mendieta.md](references/gpu-mendieta.md) y [references/lecciones-mendieta.md](references/lecciones-mendieta.md) | `scripts/gpu/` |
-| **CPU, muchos archivos independientes** (tiles LiDAR, rásters, imágenes) | Serafín (producción), Mulatona (pruebas) | [references/cpu-tiles.md](references/cpu-tiles.md) | `scripts/cpu/` |
+| **CPU, muchos archivos independientes** (tiles LiDAR, rásters, imágenes) | Helvetios o Serafín | [references/cpu-tiles.md](references/cpu-tiles.md) | `scripts/cpu/` |
 
 Resumen de la wiki página por página, con URLs: [references/wiki.md](references/wiki.md).
 Los scripts de `scripts/gpu/` o `scripts/cpu/` se copian a `PROYECTO/scripts/` en el cluster y se corren desde la carpeta del proyecto.
@@ -19,28 +19,40 @@ Para otros trabajos de CPU (un programa MPI, un solo proceso largo), seguir las 
 
 ## Elegir cluster
 
-| | Mendieta | Mulatona | Eulogia | Serafín | Boogie |
-|---|---|---|---|---|---|
-| Uso | Cómputo con GPU | Trabajos pequeños | Sólo software preinstalado | Propósito general | JupyterHub |
-| Nodos | 19 | 7 | 32 | 64 | 8 |
-| Cores/nodo | 20 (Xeon E5-2680 v2, **sin AVX2**) | 32 (Xeon E5-2683 v4) | 64C/256T (Xeon Phi 7210) | 64 (EPYC 7532) | 128 (EPYC 7B12) |
-| GPU/nodo | **2 × NVIDIA A30 (24 GB)** | - | - | - | - |
-| RAM/nodo | 64 GB | 128 GB | 96 GB | 256 GB | 512 GB |
-| /scratch | 400 GB SSD | 95 GB SSD | 200 GB SSD | 1 TB NVMe | - |
-| Job mínimo | ½ nodo (10 cores, 1 GPU) | 1 core | 1 nodo | 1 nodo | 1 core |
-| Host | mendieta.ccad.unc.edu.ar | mulatona… | eulogia… | serafin… | jupyterhub.ccad.unc.edu.ar |
+**Cambios de 2026-10:** Mulatona se retira el **28/10/2026** (vuelve al IATE) y Eulogia después, en fecha a definir; sus cabeceras quedan un tiempo sólo para migrar datos. Los reemplaza **Helvetios**, en servicio parcial desde 10/2026 (el 26/10, unos 22 de sus 288 nodos estaban disponibles). Los datos de Helvetios de abajo se verificaron con jobs reales el 26/10/2026; la wiki todavía no lo documentaba. Si la wiki y esta tabla no coinciden, vale la wiki.
+
+**Helvetios necesita alta aparte:** entrar por ssh funciona con la misma clave, pero para encolar hay que estar asociado a una cuenta de Slurm en ese cluster (`sacctmgr show assoc user=$USER` no muestra nada si falta, y `sbatch` da "Invalid account or account/partition combination"). Se pide a soporte@ccad.unc.edu.ar.
+
+| | Helvetios | Serafín | Mendieta | Boogie | Mulatona (se retira 28/10/2026) | Eulogia (se retira) |
+|---|---|---|---|---|---|---|
+| Uso | CPU, trabajos chicos y grandes | Propósito general | Cómputo con GPU | JupyterHub | Trabajos pequeños | Sólo software preinstalado |
+| Nodos | 288 (parcialmente en servicio) | 64 | 19 | 8 | 7 | 32 |
+| Cores/nodo | 36 (2 × Xeon Gold 6140, AVX-512) | 64 (EPYC 7532) | 20 (Xeon E5-2680 v2, **sin AVX2**) | 128 (EPYC 7B12) | 32 (Xeon E5-2683 v4) | 64C/256T (Xeon Phi 7210) |
+| GPU/nodo | - | - | **2 × NVIDIA A30 (24 GB)** | - | - | - |
+| RAM/nodo | 192 GB (188 utilizables) | 256 GB | 64 GB | 512 GB | 128 GB | 96 GB |
+| RAM por defecto | **~4,9 GB por core** (pedir `--mem`) | sin límite | sin límite | - | sin límite | sin límite |
+| /scratch | 512 GB por nodo, privado por job | 1 TB NVMe | 400 GB SSD | - | 95 GB SSD | 200 GB SSD |
+| Job mínimo | 1 core | 1 nodo | ½ nodo (10 cores, 1 GPU) | 1 core | 1 core | 1 nodo |
+| /home | BeeGFS (paralelo) | NFS | NFS | | NFS | NFS |
+| Sistema | Rocky Linux 10 | Rocky Linux 8 | | | | |
+| Host | helvetios.ccad.unc.edu.ar | serafin… | mendieta… | jupyterhub.ccad.unc.edu.ar | mulatona… | eulogia… |
 
 - **Mendieta sólo para programas que usan GPU.** Trabajo de CPU ahí ocupa GPUs que otros necesitan, y sus CPUs son los más viejos.
-- **Serafín para CPU en serio**, llenando nodos enteros. **Mulatona para medir y probar** con pocos cores.
-- **Eulogia** (Xeon Phi) sólo con software preinstalado (`module av`); Python con bibliotecas propias anda mal.
+- **Helvetios para CPU**, desde pruebas de pocos cores hasta muchos nodos. En cada job pedir la memoria (`--mem=…`, o `--mem=0` para el nodo entero): el valor por defecto es ~4,9 GB por core y un proceso que lo supere muere por memoria.
+- Helvetios ofrece software precompilado con módulos de EESSI (`module av`, después `module load EESSI/2025.06` y `module av` de nuevo); el entorno de conda de esta skill funciona igual.
+- **Serafín para CPU** también, llenando nodos enteros (el job mínimo es un nodo). Tiene nodos más grandes (64 cores, 256 GB) y no limita la memoria por defecto.
+- **Eulogia** (Xeon Phi) sólo con software preinstalado (`module av`); Python con bibliotecas propias anda mal. Se retira: no empezar proyectos nuevos ahí.
 
 ### Particiones
 
-| | Mendieta | Mulatona | Eulogia | Serafín |
-|---|---|---|---|---|
-| `short` | hasta 1 h (default) | hasta 1 h, 1 nodo (default) | hasta 1 h | hasta 1 h (default) |
-| `multi` | hasta 2 días | - | hasta 4 días (default) | hasta 2 días |
-| `mono` | - | hasta 2 días, 1 nodo | - | - |
+| | Helvetios | Serafín | Mendieta | Mulatona | Eulogia |
+|---|---|---|---|---|---|
+| `short` | hasta 1 h (default) | hasta 1 h (default) | hasta 1 h (default) | hasta 1 h, 1 nodo (default) | hasta 1 h |
+| `batch` | hasta 2 días | - | - | - | - |
+| `multi` | - | hasta 2 días | hasta 2 días | - | hasta 4 días (default) |
+| `mono` | - | - | - | hasta 2 días, 1 nodo | - |
+
+Ojo: en Helvetios la partición larga se llama `batch`, no `multi`.
 
 `short` suele arrancar mucho antes que `multi`: conviene partir el trabajo en jobs de menos de una hora. Ver la cola real con `sinfo` y `squeue -p multi`.
 
@@ -57,7 +69,7 @@ Para otros trabajos de CPU (un programa MPI, un solo proceso largo), seguir las 
 
 ## Almacenamiento
 
-- **`/home`**: remoto (NFS), permanente y compartido por la cabecera y los nodos del cluster. **Lento para mucha E/S**, incluido cargar bibliotecas grandes: por eso los entornos se empaquetan en un `.tar` y se descomprimen en el `/scratch` al empezar cada job.
+- **`/home`**: remoto, permanente y compartido por la cabecera y los nodos de cada cluster (NFS; en Helvetios, BeeGFS). **Lento para muchos archivos chicos**, incluido cargar bibliotecas grandes: por eso los entornos se empaquetan en un `.tar` y se descomprimen en el `/scratch` al empezar cada job.
 - **`/scratch`**: disco local de cada nodo, rápido. **Se borra al terminar el job.** Para conservar algo: copiarlo al /home antes de terminar o usar `sgather`.
 - **`/tmp`**: vive en la RAM del nodo (hasta 50 %). Sólo archivos chicos.
 - Antes de subir muchos datos, ver espacio y cuota (`df -h ~`, `quota -s`) y, si no está claro el límite, preguntar a soporte.
@@ -70,7 +82,7 @@ ssh -o BatchMode=yes USUARIO@serafin.ccad.unc.edu.ar 'comando'
 
 - Sólo claves SSH. Con `BatchMode`, si la clave no está disponible falla en vez de pedir contraseña. La primera conexión puede necesitar `-o StrictHostKeyChecking=accept-new`.
 - **Si el usuario tiene alias** en `~/.ssh/config` (verlo con `grep -B1 -A3 ccad ~/.ssh/config`), usarlos: `ssh serafin 'comando'`.
-- **No asumir que el /home es el mismo en todos los clusters:** en 2026-10, Serafín y Mulatona tenían /home independientes. Comprobarlo: `ssh serafin 'touch ~/.prueba_home' && ssh mulatona 'ls ~/.prueba_home'`. Si no es compartido, hay que subir el proyecto y armar el entorno en cada cluster que se use.
+- **No asumir que el /home es el mismo en todos los clusters:** en 2026-10, Helvetios, Serafín y Mulatona tenían /home independientes. Comprobarlo: `ssh serafin 'touch ~/.prueba_home' && ssh mulatona 'ls ~/.prueba_home'`. Si no es compartido, hay que subir el proyecto y armar el entorno en cada cluster que se use.
 - Estado de los clusters: https://stats.uptimerobot.com/eLhTV5CMni
 - El cluster no tiene git-lfs: copiar el árbol de trabajo con rsync en lugar de clonar un repo con archivos LFS.
 
@@ -101,6 +113,8 @@ seff N; jobmetrics N                             # eficiencia; Grafana (stats.cc
 - **Un job tarda muchísimo en arrancar el programa:** bibliotecas cargadas desde el /home. Empaquetar el entorno y descomprimirlo en el /scratch.
 - **`TIMEOUT`:** el programa tiene que parar solo antes del límite y poder retomar; ver el flujo de cada tipo de trabajo.
 - **Las líneas `#SBATCH` se ignoran:** sólo se leen hasta el primer comando del script.
+- **`OUT_OF_MEMORY` en Helvetios con poco uso aparente:** el límite por defecto es ~4,9 GB por core. Pedir `--mem=…` (o `--mem=0` para el nodo entero).
+- **`Invalid account or account/partition combination`:** el usuario no está dado de alta en Slurm de ese cluster (pasa en Helvetios). Pedirlo a soporte.
 
 ## Seguridad para agentes
 

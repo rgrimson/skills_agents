@@ -1,10 +1,11 @@
 #!/bin/bash
 # Mide tiempo y memoria por tile, procesando unos pocos tiles reales con el mismo envoltorio que la corrida
-# grande. Pensado para Mulatona (acepta jobs de 1 core), pero también corre en Serafín (nodo completo).
-# Encolar desde la carpeta del proyecto, después de crear_entorno.sh y armar_lotes.sh:
+# grande. Encolar desde la carpeta del proyecto, después de crear_entorno.sh y armar_lotes.sh:
 #
-#   sbatch scripts/medir_tile.sbatch                                  # 3 tiles, uno por vez
-#   sbatch --export=ALL,N=6,P=3 -c 3 scripts/medir_tile.sbatch        # 6 tiles, 3 a la vez (ver si se frenan)
+#   sbatch -c 6 --mem=40G --export=ALL,N=6,P=6 scripts/medir_tile.sbatch       # Helvetios: pocos cores, RAM explícita
+#   sbatch --exclusive -c 64 --export=ALL,N=12,P=12 scripts/medir_tile.sbatch   # Serafín: nodo completo
+#
+# (Mulatona, que aceptaba jobs de 1 core, se retiró el 28/10/2026.)
 #
 # La salida va a prueba/ (no toca estado/ ni salida/ de la corrida real) y se borra en cada medición.
 # El resumen queda al final del log: segundos y RAM máxima por tile, y segundos por GB de entrada.
